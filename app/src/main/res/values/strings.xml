@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">猛鬼宿舍 广告跳过</string>
+    <string name="xposed_desc">拦截 com.mgss.mihuan（猛鬼宿舍）的激励视频广告，不播放广告直接发放「看广告」奖励。</string>
+    <string-array name="xposedscope">
+        <item>com.mgss.mihuan</item>
+    </string-array>
+</resources>

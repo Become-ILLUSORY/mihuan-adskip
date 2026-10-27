@@ -1,0 +1,41 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'com.becomeillusory.adskip'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.becomeillusory.adskip'
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // LSPosed module can be installed from a debug/release build; no signing config needed for debug.
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    packaging {
+        resources {
+            excludes += ['META-INF/*']
+        }
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    // Provided at runtime by LSPosed. Bundled as a local file so CI does not depend on a flaky repo.
+    compileOnly files('libs/api-82.jar')
+}
