@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Signing material is injected from GitHub Actions repository secrets.
+def ksFile = System.getenv("KEYSTORE_FILE")
+def ksPass = System.getenv("KEYSTORE_PASSWORD")
+def ksAlias = System.getenv("KEY_ALIAS")
+def ksKeyPass = System.getenv("KEY_PASSWORD")
+def hasSigning = ksFile != null && !ksFile.isEmpty() && new File(ksFile).exists()
+
 android {
     namespace 'com.becomeillusory.adskip'
     compileSdk 34
@@ -12,10 +19,26 @@ android {
         versionName '1.0'
     }
 
+    signingConfigs {
+        release {
+            if (hasSigning) {
+                storeFile file(ksFile)
+                storePassword ksPass
+                keyAlias ksAlias
+                keyPassword ksKeyPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
-            // LSPosed module can be installed from a debug/release build; no signing config needed for debug.
+            if (hasSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            // debug build keeps the default debug keystore (auto-signed)
         }
     }
 

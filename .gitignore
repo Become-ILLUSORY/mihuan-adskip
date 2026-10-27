@@ -7,3 +7,6 @@ local.properties
 .DS_Store
 captures/
 *.apk
+*.jks
+*.keystore
+release.jks

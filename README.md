@@ -50,7 +50,7 @@ adb logcat -s MihuanAdSkip
 仓库已配置 GitHub Actions（`.github/workflows/build.yml`），推送到 `main` 或打 `v*` tag
 自动构建并在 Actions artifact / Release 中提供 `app-debug.apk`（debug 签名，可直接安装）。
 
-本地构建：
+本地构建（未配置签名时自动用 debug 签名）：
 
 ```bash
 gradle :app:assembleDebug
@@ -58,6 +58,25 @@ gradle :app:assembleDebug
 ```
 
 要求：JDK 17、Android SDK 34、Gradle 8.7。
+
+### 签名（release）
+
+CI 使用仓库 Secrets 中的自签密钥给 release 包签名，密钥不进仓库：
+
+| Secret | 说明 |
+| --- | --- |
+| `KEYSTORE_BASE64` | PKCS12 keystore 的 base64 |
+| `KEYSTORE_PASSWORD` | store 密码 |
+| `KEY_ALIAS` | key 别名 |
+| `KEY_PASSWORD` | key 密码 |
+
+本地签名构建：
+
+```bash
+export KEYSTORE_FILE=/path/release.jks KEYSTORE_PASSWORD=*** KEY_ALIAS=mihuan KEY_PASSWORD=***
+gradle :app:assembleRelease
+# 产物: app/build/outputs/apk/release/app-release.apk
+```
 
 ## 说明
 

@@ -26,7 +26,6 @@ jobs:
       - name: Ensure Android SDK packages
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
           SDKM="$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)"
           if [ -z "$SDKM" ]; then SDKM="$(command -v sdkmanager)"; fi
           echo "using sdkmanager: $SDKM"
@@ -39,22 +38,42 @@ jobs:
           unzip -q gradle-8.7-bin.zip -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-8.7/bin" >> "$GITHUB_PATH"
 
-      - name: Build debug APK (auto-signed)
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Decode signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          KS="$RUNNER_TEMP/release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$KS"
+          echo "KEYSTORE_FILE=$KS" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "keystore bytes: $(wc -c < "$KS")"
+          keytool -list -keystore "$KS" -storepass "$KEYSTORE_PASSWORD" | head -3
 
-      - name: Show outputs
-        run: ls -lh app/build/outputs/apk/debug/ || true
+      - name: Build signed release APK
+        run: gradle :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Verify signature
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          ls -lh "$APK"
+          BT="$ANDROID_HOME/build-tools/34.0.0"
+          "$BT/apksigner" verify --print-certs "$APK" | head -8
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mihuan-adskip-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: mihuan-adskip-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
       - name: Attach APK to GitHub Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/release/app-release.apk
           generate_release_notes: true
